@@ -1,12 +1,27 @@
 {
-  "name": "Puppet",
+  "name": "puppet",
   "version": "1.0.0",
   "description": "Application to take screenshot from specific Reveal.JS URL/HTML Presentations",
   "main": "puppet.js",
   "author": "Nikola Pařezová",
-  "license": "",
+  "license": "ISC",
   "dependencies": {
     "puppeteer": "^19.7.5"
-  }
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StarShine24/RevealJS-Puppet.git"
+  },
+  "keywords": [
+    "RevealJS",
+    "Chromium",
+    "NodeJS"
+  ],
+  "bugs": {
+    "url": "https://github.com/StarShine24/RevealJS-Puppet/issues"
+  },
+  "homepage": "https://github.com/StarShine24/RevealJS-Puppet#readme"
 }
-
