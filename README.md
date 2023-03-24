@@ -1,2 +1,11 @@
 # RevealJS-Puppet
- Application to take screenshot from specific Reveal.JS URL/HTML Presentations
+> Generate Screenshots of RevealJS presentation
+
+## Install
+
+    $ npm install @loriana_starshine/puppet
+
+## Usage
+
+    const {callPuppeteer} = require("@loriana_starshine/puppet");
+
