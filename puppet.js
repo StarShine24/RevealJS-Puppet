@@ -17,6 +17,10 @@ const log = require('single-line-log').stdout;
  * ```JS
  * callPuppeteer({folderToSave:"/path/to/file/"})
  * ``` 
+ * @param {String} forStart - Parameter that lets you call function inside webpages.
+ * ```JS
+ * callPuppeteer({forStart:"console.log('START Script here')"})
+ * ``` 
  * @param {String} path - Parameter for where the script is called from. Default is `__dirname`
  * ```JS
  * callPuppeteer({path:"/path/to/file/"})
@@ -26,22 +30,29 @@ const log = require('single-line-log').stdout;
  * 
  */
 
-exports.callPuppeteer = function (src = "", folderToSave="", forStart="console.log('START Script here')", path=process.cwd(), naming = "") {
+exports.callPuppeteer = function (obj) {
+    objDefault = {src:"",
+    folderToSave:"",
+    forStart:"console.log('START Script here')",
+    path:process.cwd(),
+    naming:""}
         
-    if (folderToSave == "")
+    Object.assign(objDefault, obj);
+        console.log("naming: "+objDefault.naming);
+    if (objDefault.folderToSave == "")
         try {
-            var folder = path.split("/");
+            var folder = objDefault.path.split("/");
             folder.pop();
             folder = folder.join("/");
-            folderToSave = folder + "/SCREENSHOTS/"
-            log("folderToSave=" + folderToSave);
-            if (!fs.existsSync(folderToSave)) {
-                fs.mkdirSync(folderToSave);
+            objDefault.folderToSave = folder + "/SCREENSHOTS/"
+            log("objDefault.folderToSave=" + objDefault.folderToSave);
+            if (!fs.existsSync(objDefault.folderToSave)) {
+                fs.mkdirSync(objDefault.folderToSave);
             }
         } catch (err) {
             return err;
         }
-    console.log("Folder Path: "+folderToSave);
+    console.log("Folder Path: "+objDefault.folderToSave);
     puppeteer.launch({
         defaultViewport: {
             width: 1920,
@@ -51,8 +62,8 @@ exports.callPuppeteer = function (src = "", folderToSave="", forStart="console.l
 
         .then(async (browser) => {
             const page = await browser.newPage();
-            await page.goto(src);
-            await log(page.evaluate(forStart));
+            await page.goto(objDefault.src);
+            await log(page.evaluate(objDefault.forStart));
             
             const aHandle = await page.evaluate(() => { return document.getElementsByTagName("section").length+document.getElementsByClassName("fragment").length });
             await page.evaluate(async () => {
@@ -61,14 +72,21 @@ exports.callPuppeteer = function (src = "", folderToSave="", forStart="console.l
                 });
             });
             for (let index = 0; index < aHandle; index++) {
-                if (!naming) {
+                if (objDefault.naming=="") {
                     var d = new Date();
-                    var naming = "Screenshot_" + d.getFullYear() + d.getMonth() + d.getDate() + "_" +
+                    objDefault.naming = "Screenshot_" + d.getFullYear() + d.getMonth() + d.getDate() + "_" +
                         d.getHours() + d.getMinutes();
                 }
                 
 
-                await page.screenshot({ path: folderToSave + naming + "_"+ (1000+ index) + ".jpeg" });
+                await page.screenshot({ path: objDefault.folderToSave + objDefault.naming + "_"+ (1000+ index) + ".jpeg" });
+                /* Checking how deep we are in the presentation:
+                * 0 = start  
+                * 1 = end
+                */
+                const progressAmount= await page.evaluate(async () => {
+                    Reveal.getProgress();
+                });
                 await page.evaluate(async () => {
                     Reveal.next();
                 });
@@ -83,7 +101,7 @@ exports.callPuppeteer = function (src = "", folderToSave="", forStart="console.l
                         animation.finish();
                     });
                 }));
-                log("NAME of the File: "+naming+ "_"+ (1000+ index) + ".jpeg"+"; which is: "+index + "-" + aHandle);
+                log("NAME of the File: "+objDefault.naming+ "_"+ (1000+ index) + ".jpeg"+"; which is: "+index + "-" + aHandle + " - progressAmount="+progressAmount);
             }
             await browser.close();
             return true;
