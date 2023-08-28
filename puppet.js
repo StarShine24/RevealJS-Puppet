@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const puppeteer = require("puppeteer");
-const fs = require("fs");
 const log = require('single-line-log').stdout;
 const error = require('single-line-log').stderr;
 
@@ -12,6 +11,14 @@ const error = require('single-line-log').stderr;
  * ```JS
  * callPuppeteer({src:"file:///path/to/file/index.html"})
  * ``` 
+ * or
+ * ```JS
+ * callPuppeteer({src:"https://path/to/file/index.html"})
+ * ``` 
+ * or
+ * ```JS
+ * callPuppeteer({src:"path/to/file/index.html"})
+ * ``` 
  * @param {String} folderToSave - Parameter for where the images should be saved. Default is root of the folder, 
  * where it creates folder `SCREENSHOTS`.
  * ```JS
@@ -21,20 +28,8 @@ const error = require('single-line-log').stderr;
  * ```JS
  * callPuppeteer({forStart:"console.log('START Script here')"})
  * ``` 
- * @param {String} path - Parameter for where the script is called from. Default is `__dirname`
- * ```JS
- * callPuppeteer({path:"file:///path/to/file/"})
- * ``` 
- * or
- * ```JS
- * callPuppeteer({path:"https://path/to/file/"})
- * ``` 
- * or
- * ```JS
- * callPuppeteer({path:"path/to/file/"})
- * ``` 
  * @param {String} naming - Naming of the screenshots. Default name is: `Screenshot_YYYYMMDD_HHmmSS` 
- * with additional count number from the lenght picked from slide count of `<slide>`
+ * with additional count number starting at 1000
  * 
  */
 
@@ -61,9 +56,9 @@ exports.callPuppeteer = function (objSet={src:"",
                 log("Changing address name to:"+objSet.src);
             }
             await page.goto(objSet.src);
-            await log(page.evaluate(objSet.forStart));
-            
-            const aHandle = await page.evaluate(() => { return document.getElementsByTagName("section").length+document.getElementsByClassName("fragment").length });
+            await log(page.evaluate(objSet.forStart));            
+
+            /* Animation ending to allow smooth screenshots*/
             await page.evaluate(async () => {
                 document.getAnimations().forEach((animation) => {
                     animation.finish();
@@ -95,7 +90,6 @@ exports.callPuppeteer = function (objSet={src:"",
                     //await setTimeout(()=>{log("its a movie!")}, 5000);
                 }
                 await log(page.evaluate(async () => {
-                    
                     document.getAnimations().forEach((animation) => {
                         if(animation.animationName!="pulse_animNEW"&&animation.animationName!="pulse_anim")
                         animation.finish();
@@ -112,4 +106,5 @@ exports.callPuppeteer = function (objSet={src:"",
             await browser.close();
             return true;
         });
+
 }
