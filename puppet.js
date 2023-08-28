@@ -2,8 +2,8 @@
 
 const puppeteer = require("puppeteer");
 const fs = require("fs");
-const path = require("path");
 const log = require('single-line-log').stdout;
+const error = require('single-line-log').stderr;
 
 /**
  * Returns true if success or error object.  
@@ -23,36 +23,30 @@ const log = require('single-line-log').stdout;
  * ``` 
  * @param {String} path - Parameter for where the script is called from. Default is `__dirname`
  * ```JS
- * callPuppeteer({path:"/path/to/file/"})
+ * callPuppeteer({path:"file:///path/to/file/"})
+ * ``` 
+ * or
+ * ```JS
+ * callPuppeteer({path:"https://path/to/file/"})
+ * ``` 
+ * or
+ * ```JS
+ * callPuppeteer({path:"path/to/file/"})
  * ``` 
  * @param {String} naming - Naming of the screenshots. Default name is: `Screenshot_YYYYMMDD_HHmmSS` 
  * with additional count number from the lenght picked from slide count of `<slide>`
  * 
  */
 
-exports.callPuppeteer = function (obj) {
-    objDefault = {src:"",
-    folderToSave:"",
-    forStart:"console.log('START Script here')",
-    path:process.cwd(),
-    naming:""}
-        
-    Object.assign(objDefault, obj);
-        console.log("naming: "+objDefault.naming);
-    if (objDefault.folderToSave == "")
-        try {
-            var folder = objDefault.path.split("/");
-            folder.pop();
-            folder = folder.join("/");
-            objDefault.folderToSave = folder + "/SCREENSHOTS/"
-            log("objDefault.folderToSave=" + objDefault.folderToSave);
-            if (!fs.existsSync(objDefault.folderToSave)) {
-                fs.mkdirSync(objDefault.folderToSave);
-            }
-        } catch (err) {
-            return err;
-        }
-    console.log("Folder Path: "+objDefault.folderToSave);
+exports.callPuppeteer = function (objSet={src:"",
+                                    folderToSave:"",
+                                        forStart:"console.log('START Script here')",
+                                                naming:""}) {
+    if(objSet.folderToSave=="")
+    {
+        return error("Missing value :folderToSave");
+    }                            
+    console.log("Folder Path: "+objSet.folderToSave);
     puppeteer.launch({
         defaultViewport: {
             width: 1920,
@@ -62,8 +56,12 @@ exports.callPuppeteer = function (obj) {
 
         .then(async (browser) => {
             const page = await browser.newPage();
-            await page.goto(objDefault.src);
-            await log(page.evaluate(objDefault.forStart));
+            if(objSet.src.substring(0,4)!="file"||objSet.src.substring(0,4)!="http"){
+                objSet.src= "file:///"+objSet.src;
+                log("Changing address name to:"+objSet.src);
+            }
+            await page.goto(objSet.src);
+            await log(page.evaluate(objSet.forStart));
             
             const aHandle = await page.evaluate(() => { return document.getElementsByTagName("section").length+document.getElementsByClassName("fragment").length });
             await page.evaluate(async () => {
@@ -71,22 +69,24 @@ exports.callPuppeteer = function (obj) {
                     animation.finish();
                 });
             });
-            for (let index = 0; index < aHandle; index++) {
-                if (objDefault.naming=="") {
+
+            var progressAmount= await page.evaluate(() => { return Reveal.getProgress()});
+            let index = 0;
+            while(progressAmount<1) {
+                if (objSet.naming=="") {
                     var d = new Date();
-                    objDefault.naming = "Screenshot_" + d.getFullYear() + d.getMonth() + d.getDate() + "_" +
+                    objSet.naming = "Screenshot_" + d.getFullYear() + d.getMonth() + d.getDate() + "_" +
                         d.getHours() + d.getMinutes();
                 }
                 
 
-                await page.screenshot({ path: objDefault.folderToSave + objDefault.naming + "_"+ (1000+ index) + ".jpeg" });
+                await page.screenshot({ path: objSet.folderToSave + objSet.naming + "_"+ (1000+ index) + ".jpeg" });
                 /* Checking how deep we are in the presentation:
                 * 0 = start  
                 * 1 = end
                 */
-                const progressAmount= await page.evaluate(async () => {
-                    Reveal.getProgress();
-                });
+                progressAmount= await page.evaluate(() => { return Reveal.getProgress()});
+
                 await page.evaluate(async () => {
                     Reveal.next();
                 });
@@ -101,11 +101,15 @@ exports.callPuppeteer = function (obj) {
                         animation.finish();
                     });
                 }));
-                log("NAME of the File: "+objDefault.naming+ "_"+ (1000+ index) + ".jpeg"+"; which is: "+index + "-" + aHandle + " - progressAmount="+progressAmount);
+                log("NAME of the File: "+objSet.naming+ "_"+ (1000+ index) + ".jpeg"+" || progress ("+Math.floor(progressAmount*100)+"/100)");
+                index++;
             }
-            await browser.close();
-            return true;
+            console.log("FINISHED");
+            return browser;
         }).catch((err) => {
             return err;
+        }).then(async (browser)=>{
+            await browser.close();
+            return true;
         });
 }
