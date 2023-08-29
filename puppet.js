@@ -51,7 +51,7 @@ exports.callPuppeteer = function (objSet={src:"",
 
         .then(async (browser) => {
             const page = await browser.newPage();
-            if(objSet.src.substring(0,4)!="file"||objSet.src.substring(0,4)!="http"){
+            if(objSet.src.substring(0,4)!="file"&&objSet.src.substring(0,4)!="http"){
                 objSet.src= "file:///"+objSet.src;
                 log("Changing address name to:"+objSet.src);
             }
@@ -98,7 +98,7 @@ exports.callPuppeteer = function (objSet={src:"",
                 log("NAME of the File: "+objSet.naming+ "_"+ (1000+ index) + ".jpeg"+" || progress ("+Math.floor(progressAmount*100)+"/100)");
                 index++;
             }
-            console.log("FINISHED");
+            log("FINISHED");
             return browser;
         }).catch((err) => {
             return err;
