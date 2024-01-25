@@ -40,6 +40,13 @@ var List = new Array;
 var SlideName = "";
 var ProperNaming = "";
 
+function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+async function sleep(fn, ...args) {
+    await timeout(500);
+    return fn(...args);
+}
 
 exports.callPuppeteer = function (objSet = {
     src: "",
@@ -52,14 +59,13 @@ exports.callPuppeteer = function (objSet = {
     if (objSet.folderToSave == undefined)
         return Promise.reject("Missing value :folderToSave");
     else
-        if (objSet.folderToSave.slice(-1) != "/")
-            objSet.folderToSave += "/";
-
+        if(objSet.folderToSave.slice(-1)!="/")
+            objSet.folderToSave+="/";
+    
     log("Folder Path: " + objSet.folderToSave);
     return new Promise((res, rej) => {
 
-        puppeteer.launch({
-            headless: "new",
+        puppeteer.launch({headless: "new",
             defaultViewport: {
                 width: 1920,
                 height: 1080,
@@ -76,11 +82,11 @@ exports.callPuppeteer = function (objSet = {
                 log("Changing address name to:" + objSet.src);
             }
             log(" address name : " + objSet.src);
-
+            
             await page.goto(objSet.src);
-            if (objSet.forStart != undefined)
+            if(objSet.forStart!=undefined)
                 await page.evaluate(objSet.forStart);
-
+        
             log(await page.evaluate(async () => { return "Document state: " + document.readyState; }));
 
             var progressAmount = await page.evaluate(async () => { return Reveal.getProgress(); });
@@ -93,9 +99,9 @@ exports.callPuppeteer = function (objSet = {
                     if (objSet.orderName == false) {
                         var d = new Date();
                         ProperNaming = objSet.naming + "_" + (1000 + index);
-                    } else {
+                    }else {
                         SlideName = "";
-                        SlideName = await page.evaluate(async () => { return Reveal.getCurrentSlide().dataset.js ? Reveal.getCurrentSlide().dataset.js : document.querySelector("section.present").dataset.js });
+                        SlideName = await page.evaluate(async () => { return Reveal.getCurrentSlide().dataset.js?Reveal.getCurrentSlide().dataset.js:document.querySelector("section.present").dataset.js });
                         if (SlideName == undefined)
                             Setname = SlideName = "no_data-js";
                         else
@@ -119,10 +125,12 @@ exports.callPuppeteer = function (objSet = {
                 });
 
                 //Call function on the webpage before the screening//
-                if (objSet.beforeScreenshots != undefined)
+                if(objSet.beforeScreenshots!=undefined)
                     await page.evaluate(objSet.beforeScreenshots);
-
-                await page.screenshot({ path: objSet.folderToSave + ProperNaming + ".jpeg" });
+                await sleep(async() => {
+                    await page.screenshot({ path: objSet.folderToSave + ProperNaming + ".jpeg" });
+                  });                  
+                
                 /* Checking how deep we are in the presentation:
                 * 0 = start  
                 * 1 = end
@@ -140,7 +148,7 @@ exports.callPuppeteer = function (objSet = {
                 log("NAME of the File: " + ProperNaming + ".jpeg" + " || progress (" + Math.floor(progressAmount * 100) + "/100)");
                 index++;
             }
-            log("FINISHED. Path to Screenshots: " + objSet.folderToSave);
+            log("FINISHED. Path to Screenshots: "+objSet.folderToSave);
 
             return browser;
         })
